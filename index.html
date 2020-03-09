@@ -5,147 +5,241 @@
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/js-cookie@beta/dist/js.cookie.min.js"></script>
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-	<script>
+    <script>
 	$(function () {
-				var socket = io();
-				let users = $('#users');
-				let messages = $('#messages');
-				$('form').submit(function(e){
-					e.preventDefault(); // prevents page reloading
-					socket.emit('chat message', $('#m').val(), Cookies.get("nickname"));
-					$('#m').val('');
-					return false;
-				});
+        var socket = io();
+        let users = $('#users');
+        let users_div = $('#member-box');
+        let messages = $('#messages');
+        let member_btn = $('#member-btn');
+        
+        member_btn.on("click", function(){
+            users_div.toggleClass("member-box-show");
+        });
 
-				socket.on('user update', function(user_list){
-					//console.log("user connected", user);
-					users.empty();
-					for(user in user_list)
-					{
-						users.append($('<li>').text(user_list[user]).addClass("list-group-item"));
-					}
-				});
-				
-				socket.on('username', function(username){
-					console.log("username", username);
-					document.cookie = "nickname="+username+";";
-				});
-				
-				
-				/*socket.on('user disconnected', function(user){
-					console.log("user disconnected", users);
-					$('#users').innerHTML('');
-					for(user in users)
-					{
-						console.log(user);
-						$('#users').append($('<li>').text(users[user]));
-					}
-				});*/
-				
-										
-				socket.on('chat message', function(msg){
-					console.log("Message recieved", msg);
-					let time = new Date(msg.time).toLocaleTimeString('en-US');
-					messages.append($('<div>').append($('<div>').text(time+ ": "+ msg.msg)));
+        $('#close-btn').on('click', function(){
+             users_div.toggleClass("member-box-show");
+        });
+        
+        $('form').submit(function(e){
+            e.preventDefault(); // prevents page reloading
+            socket.emit('chat message', $('#m').val(), Cookies.get("user_id"));
+            $('#m').val('');
+            return false;
+        });
 
-					console.log(messages.scrollTop());
-					console.log(($('#messages')[0].scrollHeight - messages.height()) - messages.scrollTop());
-					if((messages[0].scrollHeight - messages.height()) - messages.scrollTop() < 200 || messages.scrollTop() == 0)
-					{
-						messages.scrollTop($('#messages')[0].scrollHeight);
-					}
-					if(msg.user === Cookies.get("nickname"))
-					{
-						messages.scrollTop($('#messages')[0].scrollHeight);
-						$('#messages div').last().addClass('user-messages');
-					}
+        socket.on('Error', function(err_msg){
+            alert(err_msg);
+        }); 
+        
+        socket.on('user update', function(user_list){
+            //console.log("user connected", user);
+            users.empty();
+            for(user in user_list)
+            {
+                _user = user_list[user];
+                if(_user.connected)
+                {
+                    let user_item =
+            $('<li>').text(_user.username).addClass("list-group-item").css("color",
+            _user.color);
+                    if(parseInt(Cookies.get("user_id")) === _user.id){
+                        user_item.css("font-weight", "bold");
+                    }
+                    users.append(user_item);
+                }
+            }
+        });
 
-				});
-			
-			});
-	</script>
+        socket.on('user_id', function(id){
+            console.log("id", id);
+            document.cookie = "user_id="+id+";";
+        });
+        
+
+        socket.on('chat message', function(msg){
+            console.log("Message recieved", msg);
+            let time = new Date(msg.time).toLocaleTimeString('en-US', {hour12: false});
+            let msg_obj = $('<li>').append($('<div>').text(time.substr(0, 5)+" "+ msg.username+": "+ msg.msg).css("color", msg.color));
+            if(msg.user === Cookies.get("user_id")){
+                messages.append(msg_obj.addClass('user-messages'));
+            }
+            else
+            {
+                messages.append(msg_obj);
+            }
+            console.log(messages.scrollTop());
+            console.log(($('#messages')[0].scrollHeight - messages.height()) - messages.scrollTop());
+            if((messages[0].scrollHeight - messages.height()) - messages.scrollTop() < 200 || messages.scrollTop() == 0){
+                messages.scrollTop($('#messages')[0].scrollHeight);
+            }
+            /*
+            if(msg.user === Cookies.get("user_id")){
+                messages.scrollTop($('#messages')[0].scrollHeight);
+                $('#messages div').addClass('user-messages');
+            }*/
+        });
+
+    });
+    </script>
 	<style>
-	
-		
+
+        
 body { 
-	font: 15px; 
-	font-family: sans-serif;
+    font: 15px; 
+    font-family: sans-serif;
 }
-form { background: #000; padding: 3px; height: 5vh; position: absolute; bottom: 0; width: 100%; }
-form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-#messages { 
+
+form {
+    background: #515151;
+    height: 50px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    display: inline-flex;
+    border-top: 2px solid #919191;
+}
+
+form input {
+    border: 0;
+    padding: 10px;
+    width: 100%;
+}
+
+form button {
+    width: 60px;
+    background: rgb(130, 224, 255);
+    border: none;
+    padding: 10px;
+}
+
+
+
+
+#messages {
     list-style-type: none;
-     margin: 0; 
-     padding: 0; 
-     width: 100%; 
-     text-align: start;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    text-align: start;
     overflow-y: auto;
-	height: 95vh;
-	scroll-behavior: smooth;
+    max-height: calc(100vh - 60px);
+    scroll-behavior: smooth;
+    bottom: 0px;
+    position: absolute;
 }
 
 #messages div { 
-	padding: 10px;
-	display: flex;
+    padding: 10px;
+    display: flex;
 }
 #messages div div{ 
-	background: #21212151;
-	border-radius: 25px;
-	max-width: 50%;
+    background: #91919144;
+    border-radius: 25px;
+    max-width: 50%;
 }
 
 #users { 
-	margin: 0; 
-	padding: 0; 
-	width: 100%; 
-	text-align: start;
-	height: 95vh;
-	list-style: none;
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    text-align: start;
+    height: 95vh;
+    list-style: none;
 }
 
 #message-box{
-height: 100vh;
-width: 75%;
-display: flex;
-position: relative;
+    height: 100vh;
+    width: 100%;
+    display: block;
+    position: relative;
+}
+#msg-block{
+    position: relative;
+    height: calc(100vh - 60px); 
+}
+#member-box{
+    width: 25%;
+    max-width: 300px;
+    height: 100vh;
+    border-left: 1px solid #919191;
+    background: #e1e1e1;
 }
 
-#member-box{
-width: 25%;
-height: 100vh;
-border-left: 1px solid #919191;
-background: #e1e1e1;
+#member-btn{
+    display: none;
 }
 
 #full-window{
-width: 100%;
-display: inline-flex;
+    width: 100%;
+    display: inline-flex;
 }
 
 .user-messages{
-	color: red !important;
-	text-align: end;
-	justify-content: end;
+    font-weight: bold;
 }
-	
+
+.user-messages{
+    text-align: right;
+}
+
+#close-btn{
+    display: none;
+}
+
+@media only screen and (max-width: 600px) {
+    #member-btn{
+        display: block;
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        transition: all 500ms ease;
+    }
+    #close-btn{
+        display: block;
+        margin: 5px;
+        border: none;
+        font-weight: bold;
+    }
+    #member-box{
+        position: fixed;
+        width: 300px;
+        right: -300px;
+        transition: all 500ms ease;
+    }
+    .member-box-show{
+        right: 0px !important;
+        
+        width: 100% !important;
+        max-width: 100% !important;
+        transition: all 500ms ease;
+    }
+
+
+
 </style>
   </head>
   <body>
   	<div id="full-window">
   	<div id="message-box">
-    <div id="messages">
+        <div id="msg-block">
+        <ul id="messages">
 
-	</div>
+	    </ul>
+        </div>
     <br/>
      <form action="">
-      <input id="m" autocomplete="off" /><button class="btn btn-primary">Send</button>
+      <input id="m" autocomplete="off" /><button class=" btn-primary">Send</button>
     </form>
     </div>
+
+    <button type="button" id="member-btn" class="btn btn-sm btn-primary">users</button>
     <div id="member-box">
-    <ul id="users" class="list-group list-group-flush"></ul>
+        <button type="button" id="close-btn" class="btn btn-outline-primary"><</button>
+        <ul id="users" class="list-group list-group-flush"></ul>
     </div>
 		</div>
     
