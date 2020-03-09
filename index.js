@@ -5,7 +5,7 @@ var random_name = require('node-random-name');
 
 let messages = [];
 let users = [];
-let clr_exp = new RegExp('[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3}'); //color reg expression
+let clr_exp = new RegExp('^([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$'); //color reg expression
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -35,24 +35,24 @@ io.on('connection', function(socket){
 
 
   function get_id(){
-    try{
-    let cookies = socket.handshake.headers.cookie;
     let id = Math.floor(Math.random() * 53232);
-    if(cookies.includes("user_id="))
-    {
-      id = cookies.substr(cookies.indexOf("user_id") + 8);
-      id = id.substr(0, id.indexOf(";"));
-      console.log("User with id connected: ", id);
-    }
-    else{
-      socket.emit('user_id', id);
-    }
-      return parseInt(id);
+    
+    /*Check cookies for user id, if exists handle accordingly*/
+    try{
+      let cookies = socket.handshake.headers.cookie;
+      if(cookies.includes("user_id=")){
+        id = cookies.substr(cookies.indexOf("user_id") + 8);
+        id = id.substr(0, id.indexOf(";"));
+        console.log("User with id connected: ", id);
+      }
+      else{
+        socket.emit('user_id', id);
+      }
     }
     catch(Exception){
       console.log("failed to get user id");
-      return null;
     }
+    return parseInt(id);
   }
 
 
@@ -73,7 +73,7 @@ io.on('connection', function(socket){
       'color': "#00008b",
       'connected': true,
     }
-    users.push(user);
+    users.push(user); //adding user to array
   }
   //console.log(user ,' connected');
   io.emit('user update', users);
@@ -88,8 +88,8 @@ io.on('connection', function(socket){
   }
   
   socket.on('disconnect', function(){
-    console.log("USERS: "+ users[0].id);
-    console.log("USER ID:" + get_id());
+    //console.log("USERS: "+ users[0].id);
+    //console.log("USER ID:" + get_id());
 
     for(let i = 0; i < users.length; i++){
       if(users[i].id === get_id()){
@@ -108,6 +108,7 @@ io.on('connection', function(socket){
   	let tm = Date.now();
     let user = get_user(parseInt(id));
 
+    /*handling user commands*/
     if(messg.startsWith("/nick ")){
       console.log("user attempting to change username");
       let nick = messg.substr(6);
