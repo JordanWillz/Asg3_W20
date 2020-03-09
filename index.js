@@ -34,8 +34,8 @@ io.on('connection', function(socket){
   }
 
 
-function get_id()
-  {
+  function get_id(){
+    try{
     let cookies = socket.handshake.headers.cookie;
     let id = Math.floor(Math.random() * 53232);
     if(cookies.includes("user_id="))
@@ -47,7 +47,12 @@ function get_id()
     else{
       socket.emit('user_id', id);
     }
-    return parseInt(id);
+      return parseInt(id);
+    }
+    catch(Exception){
+      console.log("failed to get user id");
+      return null;
+    }
   }
 
 
@@ -103,7 +108,7 @@ io.on('connection', function(socket){
   	let tm = Date.now();
     let user = get_user(parseInt(id));
 
-    if(messg.includes("/nick ")){
+    if(messg.startsWith("/nick ")){
       console.log("user attempting to change username");
       let nick = messg.substr(6);
       if(users.some(_user => _user.username === nick && _user.connected)){
@@ -115,7 +120,7 @@ io.on('connection', function(socket){
         io.emit('user update', users);
       }
     }
-    else if(messg.includes("/nickcolor ")){
+    else if(messg.startsWith("/nickcolor ")){
       console.log("user attempting to change nick color");
       let color = messg.substring(11);
       if(clr_exp.test(color)){
@@ -126,6 +131,9 @@ io.on('connection', function(socket){
         socket.emit('Error', "Color code not recognized (please use hex color code format)");
         console.log("Color code format not correct");
       }
+    }
+    else if(messg.startsWith("/")){
+      socket.emit('Error', "Code not recognized");
     }
     else{
   	  //format message as object with time and message
