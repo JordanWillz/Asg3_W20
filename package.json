@@ -6,6 +6,6 @@
 		"express": "^4.15.2",
 		"js-cookie": "^2.2.1",
 		"node-random-name": "^1.0.1",
-		"socket.io": "^2.3.0"
+		"socket.io": "^2.5.0"
 	}
 }
