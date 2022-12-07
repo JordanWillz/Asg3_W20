@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "chat service",
 	"dependencies": {
-		"express": "^4.15.2",
+		"express": "^4.17.3",
 		"js-cookie": "^2.2.1",
 		"node-random-name": "^1.0.1",
 		"socket.io": "^2.3.0"
